@@ -29,7 +29,7 @@ public class SearchBoardRepositotyImpl extends QuerydslRepositorySupport impleme
     }
 
     @Override
-    public Board serch1() {
+    public  Board serch1() {
         log.info("search1...............");
         QBoard board = QBoard.board;
         QReply reply = QReply.reply;
@@ -66,10 +66,9 @@ public class SearchBoardRepositotyImpl extends QuerydslRepositorySupport impleme
         //left join b.writer w left join reply r on r.board = b
         JPQLQuery<Tuple> tuple = jpqlQuery.select(board, member, reply.count());
 
-        BooleanBuilder booleanBuilder = new BooleanBuilder();
-        BooleanExpression expression = board.bno.gt(0L);
+        BooleanBuilder booleanBuilder = new BooleanBuilder();//where 생성
+        booleanBuilder.and(board.bno.gt(0L));
 
-        booleanBuilder.and(expression);
         if (type != null) {
             String[] typearr = type.split("");
             //검색 조건을 작성하기
@@ -90,18 +89,12 @@ public class SearchBoardRepositotyImpl extends QuerydslRepositorySupport impleme
             booleanBuilder.and(conditionBuilder);
         }
         tuple.where(booleanBuilder);
-
         //oder by
         Sort sort = pageable.getSort();
-
-//        tupleJPQLQuery.orderBy(board.bno.desc());
-
         sort.stream().forEach(order -> {
             Order direction = order.isAscending() ? Order.ASC : Order.DESC;
-            String prop = order.getProperty();
-            System.out.println(prop);
             PathBuilder orderByExpression = new PathBuilder(Board.class, "board");
-            tuple.orderBy((new OrderSpecifier(direction, orderByExpression.get(prop))));
+            tuple.orderBy((new OrderSpecifier(direction, orderByExpression.get(order.getProperty()))));
         });
         tuple.groupBy(board);
         //page 처리
